@@ -94,7 +94,18 @@ class AnnotationParser:
         if key is not None:
             value = self._navigate(value, key, sep)
 
-        if value in self.parser['true']:
+        # CPD + PJM 09.04.18: if ANY annotation is made in spacewarps, then the
+        # user must think it a positive classification. If None are made, then
+        # they think it is a negative classification. If we were going to use
+        # the original formatting, then all user classifications (positive or
+        # negative) would need to contain some sort of positive/negative tag,
+        # regardless of whether an annotation is made.
+        if len(value) > 0:
             return 1
-        if value in self.parser['false']:
+        elif len(value) == 0:
             return 0
+        else:
+            if value in self.config.true:
+                return 1
+            if value in self.config.false:
+                return 0
