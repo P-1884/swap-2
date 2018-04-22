@@ -120,6 +120,7 @@ static/
 # Vim config and support files
 tags
 _vimrc_local.vim
+.*.sw*
 
 # SWAP specific stuff
 logs/

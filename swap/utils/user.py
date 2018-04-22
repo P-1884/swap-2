@@ -37,9 +37,9 @@ class User:
     def score(self):
         correct = self.correct
         seen = self.seen
-        gamma = 1
+        gamma = 1  # TODO: this should be configurable
 
-        score = [.5, .5]
+        score = [.5, .5]  # TODO: this should be configurable
         for i in [0, 1]:
             if seen[i] > 0:
                 score[i] = (correct[i]+gamma) / (seen[i]+2*gamma)
@@ -66,6 +66,21 @@ class User:
             ('correct', self.correct),
             ('seen', self.seen),
         ])
+
+    def report(self, report_classifications=True):
+        string = '# user id: {0}, name: {1},'.format(self.id, self.name)
+        string += ' PBogus: {0:.3f}, PReal: {1:.3f}, length: {2}\n'.format(self.score[0], self.score[1], sum(self.seen))
+        string += '## Bogus Seen: {0}, Bogus Correct: {1}, Real Seen: {2}, Real Correct: {3}\n'.format(self.seen[0], self.correct[0], self.seen[1], self.correct[1])
+        if report_classifications:
+            string += '# Subject ID, Gold, Classification\n'
+            for s in self.history:
+                id = s[0]
+                gold = s[1]
+                classification = s[2]
+                string += '{0}, {1}, {2}\n'.format(id, gold, classification)
+            string += '\n'
+
+        return string
 
     def truncate(self):
         self.prior = (self.correct, self.seen)

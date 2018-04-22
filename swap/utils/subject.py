@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Subject:
-    p0 = .12
+    p0 = .12  # TODO: this seems like it should be configurable
 
     def __init__(self, subject, gold, score, seen=0, retired=None):
         self.id = subject
@@ -78,6 +78,22 @@ class Subject:
             ('retired', self.retired),
             ('seen', self.seen),
         ])
+
+    def report(self, report_classifications=True):
+        string = '# subject id: {0},'.format(self.id)
+        string += ' gold: %d, score: %.3f, length: %d\n' % \
+                (self.gold, self.score, len(self.history))
+        if report_classifications:
+            string += '# User ID, PBogus, PReal, Classification\n'
+            for s in self.history:
+                id = s[0]
+                pbogus = s[1][0]
+                preal = s[1][1]
+                classification = s[2]
+                string += '{0}, {1:.2f}, {2:.2f}, {3}\n'.format(id, preal, pbogus, classification)
+            string += '\n'
+
+        return string
 
     def truncate(self):
         self.prior = self.score
@@ -170,7 +186,7 @@ class Thresholds:
         logger.debug('determining retirement thresholds fpr %.3f mdr %.3f',
                      fpr, mdr)
 
-        scores = self.get_scores()
+        scores = self.get_scores()  # these are sorted!
         totals = self.get_counts(scores)
 
         # Calculate real retirement threshold

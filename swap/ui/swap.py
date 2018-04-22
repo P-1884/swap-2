@@ -41,7 +41,7 @@ def run(name, data):
                 sys.stdout.flush()
                 sys.stdout.write("%d records processed\r" % i)
 
-            swap.classify(**row)
+            swap.classify(**row)  # appends to agent and subject histories
 
             # if i > 0 and i % 1e6 == 0:
                 # print()
@@ -49,11 +49,16 @@ def run(name, data):
                 # swap()
                 # swap.truncate()
 
-    swap()
+    swap()  # score_users, apply_subjects, score_subjects
+    logger.info('Retiring')
     swap.retire(config.fpr, config.mdr)
+    logger.info('Reporting')
+    swap.report()
+    logger.info('entering interactive after applying classifications but before saving')
+    code.interact(local={**globals(), **locals()})
+    logger.info('saving')
     swap.save()
 
-    code.interact(local={**globals(), **locals()})
 
 
 @ui.cli.command()
@@ -66,6 +71,7 @@ def new(name, config):
         swap = SWAP(name, config)
     else:
         swap = SWAP(name)
+    logger.info('saving')
     swap.save()
 
 
@@ -92,5 +98,7 @@ def golds(name, path):
 
     swap = SWAP.load(name)
     swap.apply_golds(golds)
-    swap.save()
+    logger.info('entering interactive after applying golds but before saving')
     code.interact(local={**globals(), **locals()})
+    logger.info('saving')
+    swap.save()

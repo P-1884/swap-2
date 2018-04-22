@@ -83,11 +83,11 @@ class SWAP:
         return swp
 
     def __call__(self):
-        print('score users')
+        logger.info('score users')
         self.score_users()
-        print('apply subjects')
+        logger.info('apply subjects')
         self.apply_subjects()
-        print('score_subjects')
+        logger.info('score_subjects')
         self.score_subjects()
 
     def classify(self, user, subject, cl, id_):
@@ -113,11 +113,13 @@ class SWAP:
             s.update_score()
 
     def apply_subjects(self):
+        # update user scores to each subject
         for u in self.users.iter():
             for subject, _, _ in u.history:
                 self.subjects[subject].update_user(u)
 
     def apply_gold(self, subject, gold):
+        # update gold subjects to each user
         subject = self.subjects[subject]
         subject.gold = gold
         for user, _, _ in subject.history:
@@ -130,7 +132,7 @@ class SWAP:
     def retire(self, fpr, mdr):
         t = Thresholds(self.subjects, fpr, mdr)
         self.thresholds = t
-        bogus, real = t()
+        bogus, real = t()  # these are the threshold scores: p < bogus -> object is retired as bogus, and p > real -> object is retired as real.
 
         for subject in self.subjects.iter():
             subject.update_score((bogus, real))
@@ -151,6 +153,67 @@ class SWAP:
         fname = self.name + '.pkl'
         with open(swap.data.path(fname), 'wb') as file:
             pickle.dump(data, file)
+
+    def report(self, report_subjects=True, report_users=True, report_classifications=True):
+        # make a string for reporting, dumps to a text file located in same directory as pickle
+        report = 'Report for SWAP Database {0}\n'.format(self.name)
+
+        # number of subjects, users, and number of classifications
+        # looks like the closest proxy we can easily and reliably have to the number of classifications is to count the number of seen in the subjects
+        n_seen = 0
+        for key in self.subjects.keys():
+            subject = self.subjects[key]
+            n_seen += subject.seen
+        report += '\n{0} Subjects, {1} Users, {2} Classifications\n'.format(len(self.subjects), len(self.users), n_seen)
+
+        if self.thresholds is not None:
+            # Target FPR, MDR, bogus and real thresholds
+            p_bogus = self.thresholds.thresholds[0]
+            p_real = self.thresholds.thresholds[1]
+            report += '\nTarget FPR: {0:.3f}, Target MDR: {1:.3f}, P(Retire Bogus): {2:.3f}, P(Retire Real): {3:.3f}\n'.format(self.thresholds.fpr, self.thresholds.mdr, p_bogus, p_real)
+
+            # TODO: golds: give breakdown of golds classifications
+            scores = self.thresholds.get_scores()
+            total = [0, 0, 0]
+            bogus = [0, 0, 0]
+            real = [0, 0, 0]
+            inconclusive = [0, 0, 0]
+            for score in scores:
+                index = {0: 0, 1: 1, -1: 2}[score[0]]
+                total[index] += 1
+                p = score[1]
+                if p >= p_real:
+                    real[index] += 1
+                elif p <= p_bogus:
+                    bogus[index] += 1
+                else:
+                    inconclusive[index] += 1
+            for k, label in enumerate(['bogus', 'real', 'unknown']):
+                report += '{0} {1}: {2} classified real, {3} classified bogus, {4} inconclusive'.format(label, total[k], real[k], bogus[k], inconclusive[k])
+                report += '\n'
+        else:
+            logger.debug('skipping threshold reporting')
+
+
+        if report_subjects:
+            report += '\n#####\n# Subjects\n#####\n'
+            for key in self.subjects.keys():
+                subject = self.subjects[key]
+                subject_report = subject.report(report_classifications=report_classifications)
+                report += subject_report
+
+        if report_users:
+            report += '\n#####\n# Users\n#####\n\n'
+            for key in self.users.keys():
+                user = self.users[key]
+                user_report = user.report(report_classifications=report_classifications)
+                report += user_report
+
+        # save it
+        fname = self.name + '_report.txt'
+        logger.info('Saving report to {0}'.format(swap.data.path(fname)))
+        with open(swap.data.path(fname), 'w') as file:
+            file.write(report)
 
     @property
     def performance(self):
