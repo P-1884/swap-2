@@ -121,6 +121,19 @@ def load(name):
     swap = SWAP.load(name)
     code.interact(local={**globals(), **locals()})
 
+@ui.cli.command()
+@click.argument('name')
+@click.argument('directory')
+def export(name, directory):
+    logger.info('loading swap {0}'.format(name))
+    swap = SWAP.load(name)
+    report_path = directory + '/{0}_report.txt'.format(swap.name)
+    logger.info('reporting')
+    swap.report(path=report_path)
+    logger.info('exporting score')
+    score_path = directory + '/{0}_scores.csv'.format(swap.name)
+    swap.export(path=score_path)
+
 
 @ui.cli.command()
 @click.argument('name')

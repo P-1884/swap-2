@@ -313,7 +313,7 @@ class SWAP:
         with open(swap.data.path(fname), 'wb') as file:
             pickle.dump(data, file)
 
-    def report(self, report_subjects=True, report_users=True, report_classifications=True):
+    def report(self, path=None, report_subjects=True, report_users=True, report_classifications=True):
         # make a string for reporting, dumps to a text file located in same directory as pickle
         report = 'Report for SWAP Database {0}\n'.format(self.name)
 
@@ -371,10 +371,28 @@ class SWAP:
                 report += user_report
 
         # save it
-        fname = self.name + '_report.txt'
-        logger.info('Saving report to {0}'.format(swap.data.path(fname)))
-        with open(swap.data.path(fname), 'w') as file:
+        if path is None:
+            path = swap.data.path(self.name + '_report.txt')
+        logger.info('Saving report to {0}'.format(path))
+        with open(path, 'w') as file:
             file.write(report)
+
+    def export(self, path=None):
+        import csv
+
+        if path is None:
+            path = swap.data.path(self.name + '_scores.csv')
+        logger.info('Saving scores to {0}'.format(path))
+
+        with open(path, 'w') as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(["id","gold","score","retired","seen"])
+            for subject in self.subjects.iter():
+                retired = subject.retired
+                if retired is None:
+                    retired = -1
+                row = [subject.id, subject.gold, subject.score, retired, subject.seen]
+                writer.writerow(row)
 
     @property
     def performance(self):
