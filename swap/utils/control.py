@@ -59,6 +59,8 @@ class SWAP:
         self._performance = None
         self.last_id = None
 
+        self.classifications = []
+
     @classmethod
     def load(cls, name):
         fname = name + '.pkl'
@@ -90,6 +92,160 @@ class SWAP:
         logger.info('score_subjects')
         self.score_subjects()
 
+    def offline(self, unsupervised=False, ignore_gold_status=False):
+        # like __call__, but now we incorporate the probabilities of the unknown samples. In order to avoid breaking pieces of user and subject, I do the math here, and then apply the info
+        import numpy as np
+
+        logger.info('OfflineSwap: ignore_gold_status={0}, unsupervised={1}'.format(ignore_gold_status, unsupervised))
+
+        # need to turn the classifications into a more easily manipulatable form
+
+        logger.debug('OfflineSwap: Getting scores')
+        uids = []
+        sids = []
+        classifications = []
+        for classification in self.classifications:
+            user_id, subject_id, cl = classification
+
+            if user_id not in uids:
+                uids.append(user_id)
+
+            if subject_id not in sids:
+                sids.append(subject_id)
+            subject = self.subjects[subject_id]
+            classifications.append([uids.index(user_id), sids.index(subject_id), cl, subject.gold])
+        classifications = np.array(classifications)
+
+        logger.debug('OfflineSwap: confusions')
+        confusions = []
+        for uid in uids:
+            confusions.append(self.users[uid].score)
+        confusions = np.array(confusions)  # confusions[:,0] == PD, confusions[:,1] == PL
+
+        logger.debug('OfflineSwap: probabilities')
+        probabilities = []
+        unknown_indices = []
+        for i, sid in enumerate(sids):
+            subject = self.subjects[sid]
+            probabilities.append(subject.score)
+            if subject.gold != -1:
+                unknown_indices.append(i)
+        unknown_indices = np.array(unknown_indices)
+        probabilities = np.array(probabilities)
+
+        # EM parameters
+        N_min = 40
+        N_max = 1000
+        if not ignore_gold_status and not unsupervised:
+            N_min = 2  # this should converge right away
+        epsilon_min = 1e-8
+        gamma = 1
+
+        epsilon_taus = 10
+        N_try = 0
+        logger.info('Running Expectation Maximization')
+        while (epsilon_taus > epsilon_min) * (N_try < N_max) + (N_try < N_min):
+            # collect old probabilities for assessing convergence
+            old_probabilities = probabilities.copy()
+
+            # E step
+            p_real = np.zeros_like(probabilities)
+            p_bogus = np.zeros_like(probabilities)
+            n_observations = np.zeros_like(probabilities)
+            n_user_observations = np.zeros(len(confusions))
+            # this for loop could probably be done in a smarter fashion. Or at least in numba instead
+            for ci in classifications:
+                uid, sid, cid, gold = ci
+
+                # TODO: I forget which of these is the bestest way
+                # p0i = probabilities[sid]
+                # p0i = np.mean(probabilities)
+                p0i = subject.p0  # this converges much quicker
+                p_real[sid] += (confusions[uid, 1] ** cid *
+                                (1 - confusions[uid, 1]) ** (1 - cid) *
+                                p0i)
+                p_bogus[sid] += ((1 - confusions[uid, 0]) ** cid *
+                                 confusions[uid, 0] ** (1 - cid) *
+                                 (1 - p0i))
+                n_observations[sid] += 1.
+                n_user_observations[uid] += 1.
+
+            # any subjects with no observations get put back to their prior score
+            probabilities = np.where(n_observations > 0, p_real / (p_real + p_bogus) / n_observations, old_probabilities)
+
+            # assess convergence
+            epsilon_taus = np.sum(np.abs(probabilities - old_probabilities) / len(probabilities))
+
+            # M step
+            confusions_numer = np.zeros_like(confusions)
+            confusions_denom = np.zeros_like(confusions)
+            for ci in classifications:
+                uid, sid, cid, gold = ci
+
+                if not unsupervised and gold == -1:
+                    # ignore non golds in supervised mode
+                    continue
+
+                if ignore_gold_status:
+                    pi = probabilities[sid]
+                else:
+                    if gold == 0:
+                        pi = 0
+                    elif gold == 1:
+                        pi = 1
+                    else:
+                        pi = probabilities[sid]
+
+                confusions_numer[uid, 0] += (1 - cid) * (1 - pi)
+                confusions_numer[uid, 1] += cid * pi
+                confusions_denom[uid, 0] += 1 - pi
+                confusions_denom[uid, 1] += pi
+
+            confusions = (gamma + confusions_numer) / (2 * gamma + confusions_denom)
+
+            N_try += 1
+            logger.debug('EM Step {0} out of max {1}. Convergence Score: {2:.2e}.'.format(N_try, N_max, epsilon_taus))
+
+        logger.info('Finished EM at Step {0}. Convergence Score: {1:.2e}'.format(N_try, epsilon_taus))
+
+        logger.info('score users')
+        # apply scores
+        for user in self.users.iter():
+            # hacky: set prior, seen, and correct values, and truncate history
+            # this is because we cannot set the score itself (it is a method that is considered a property of the user class)
+            try:
+                uid = uids.index(user.id)
+            except ValueError:
+                continue
+            p_bogus, p_real = confusions[uid]
+            # take total seen and translate this into that
+            n_real = probabilities.sum()
+            n_bogus = len(probabilities) - n_real
+
+            user.seen = [n_bogus - 2 * gamma, n_real - 2 * gamma]
+            user.correct = [n_bogus * p_bogus - gamma, n_real * p_real - gamma]
+            user.prior = (user.correct, user.seen)
+            # truncate history
+            # user.history = []
+
+        logger.info('apply subjects')
+        self.apply_subjects()
+
+        logger.info('score subjects')
+        for subject in self.subjects.iter():
+            # emulate update_score
+            try:
+                sid = sids.index(subject.id)
+            except ValueError:
+                continue
+            probability = probabilities[sid]
+            print(sid, subject.id, probability)
+            # modify prior == score
+            subject.prior = probability
+            subject.score = probability
+            # truncate history for the truncate step
+            # subject.history = []
+
     def classify(self, user, subject, cl, id_):
         if self.last_id is None or id_ > self.last_id:
             self.last_id = id_
@@ -99,6 +255,8 @@ class SWAP:
 
         user.classify(subject, cl)
         subject.classify(user, cl)
+
+        self.classifications.append([user.id, subject.id, cl])
 
     def truncate(self):
         self.users.truncate()
@@ -135,7 +293,8 @@ class SWAP:
         bogus, real = t()  # these are the threshold scores: p < bogus -> object is retired as bogus, and p > real -> object is retired as real.
 
         for subject in self.subjects.iter():
-            subject.update_score((bogus, real))
+            # subject.update_score((bogus, real))
+            subject.retire((bogus, real))
 
     def save(self):
         if self.thresholds is not None:
@@ -191,6 +350,8 @@ class SWAP:
             for k, label in enumerate(['bogus', 'real', 'unknown']):
                 report += '{0} {1}: {2} classified real, {3} classified bogus, {4} inconclusive'.format(label, total[k], real[k], bogus[k], inconclusive[k])
                 report += '\n'
+            # report += 'fpr: {0:.4f}, mdf: {1:.4f}'.format(1 - real[1] / total[1], 1 - bogus[0] / total[0])
+            report += '\n'
         else:
             logger.debug('skipping threshold reporting')
 

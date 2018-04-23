@@ -69,6 +69,13 @@ class Subject:
             return score, _history
         return score
 
+    def retire(self, thresholds):
+        bogus, real = thresholds
+        if self.score < bogus:
+            self.retired = 0
+        elif self.score > real:
+            self.retired = 1
+
     def dump(self):
         return OrderedDict([
             ('subject', self.id),
