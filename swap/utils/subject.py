@@ -88,8 +88,8 @@ class Subject:
 
     def report(self, report_classifications=True):
         string = '# subject id: {0},'.format(self.id)
-        string += ' gold: %d, score: %.3f, length: %d\n' % \
-                (self.gold, self.score, len(self.history))
+        string += ' gold: %d, score: %.3f, seen: %d\n' % \
+                (self.gold, self.score, self.seen)
         if report_classifications:
             string += '# User ID, PBogus, PReal, Classification\n'
             for s in self.history:
