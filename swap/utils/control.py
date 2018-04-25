@@ -296,7 +296,7 @@ class SWAP:
             # subject.update_score((bogus, real))
             subject.retire((bogus, real))
 
-    def save(self):
+    def save(self, name=None):
         if self.thresholds is not None:
             thresholds = self.thresholds.dump()
         else:
@@ -309,8 +309,9 @@ class SWAP:
             'last_id': self.last_id,
         }
 
-        fname = self.name + '.pkl'
-        with open(swap.data.path(fname), 'wb') as file:
+        if name is None:
+            name = swap.data.path(self.name + '.pkl')
+        with open(name, 'wb') as file:
             pickle.dump(data, file)
 
     def report(self, path=None, report_subjects=True, report_users=True, report_classifications=True):

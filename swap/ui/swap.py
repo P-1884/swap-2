@@ -8,6 +8,7 @@ import sys
 from swap.ui import ui
 from swap.utils.control import SWAP, Config, Thresholds
 from swap.utils.parser import ClassificationParser
+from swap.utils.plots import trajectory_plot
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,7 +25,9 @@ def clear(name):
 @ui.cli.command()
 @click.argument('name')
 @click.argument('data')
-def run(name, data):
+@click.option('--trajectory', default=None, help='Save trajectories of a random subsample of subjects to this specified path, if provided.')
+@click.option('--report', default=None, help='Save report about analysis to this specified path, if provied.')
+def run(name, data, trajectory=None, report=None):
     swap = SWAP.load(name)
     config = swap.config
     parser = ClassificationParser(config)
@@ -52,8 +55,12 @@ def run(name, data):
     swap()  # score_users, apply_subjects, score_subjects
     logger.info('Retiring')
     swap.retire(config.fpr, config.mdr)
-    logger.info('Reporting')
-    swap.report()
+    if report is not None:
+        logger.info('Reporting to {0}'.format(report))
+        swap.report(path=report)
+    if trajectory is not None:
+        logger.info('Plotting some trajectories to {0}'.format(trajectory))
+        trajectory_plot(swap=swap, path=trajectory)
     logger.info('entering interactive after applying classifications but before saving')
     code.interact(local={**globals(), **locals()})
     logger.info('saving')
@@ -64,7 +71,8 @@ def run(name, data):
 @click.argument('data')
 @click.option('--unsupervised', is_flag=True, default=False, help='Run offline SWAP algorithm updating confusion matrices using all objects in the catalog. Default: False')
 @click.option('--ignore_gold_status', is_flag=True, default=False, help='Run offline SWAP algorithm ignoring gold status of objects in catalog, so that confusion matrices updated using golds uses current probability estimate. Default: False')
-def offline(name, data, unsupervised=False, ignore_gold_status=False):
+@click.option('--report', default=None, help='Save report about analysis to this specified path, if provied.')
+def offline(name, data, unsupervised=False, ignore_gold_status=False, report=None):
     swap = SWAP.load(name)
     config = swap.config
     parser = ClassificationParser(config)
@@ -93,8 +101,9 @@ def offline(name, data, unsupervised=False, ignore_gold_status=False):
     swap.offline(unsupervised=unsupervised, ignore_gold_status=ignore_gold_status)
     logger.info('Retiring')
     swap.retire(config.fpr, config.mdr)
-    logger.info('Reporting')
-    swap.report()
+    if report is not None:
+        logger.info('Reporting to {0}'.format(report))
+        swap.report(path=report)
     logger.info('entering interactive after applying classifications but before saving')
     code.interact(local={**globals(), **locals()})
     logger.info('saving')
@@ -120,6 +129,18 @@ def new(name, config):
 def load(name):
     swap = SWAP.load(name)
     code.interact(local={**globals(), **locals()})
+
+@ui.cli.command()
+@click.argument('old_name')
+@click.argument('new_name')
+def copy(old_name, new_name):
+    from swap.data import path
+    swap = SWAP.load(old_name)
+    new_name_path = path(new_name + '.pkl')
+    logger.info('Saving new data at {0} after code interactive'.format(new_name_path))
+    code.interact(local={**globals(), **locals()})
+    logger.info('saving')
+    swap.save(name=new_name_path)
 
 @ui.cli.command()
 @click.argument('name')
