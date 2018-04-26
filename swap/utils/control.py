@@ -321,7 +321,7 @@ class SWAP:
             'subjects': self.subjects.dump(),
             'thresholds': thresholds,
             'last_id': self.last_id,
-            'seen_classifications': self._seen_classifications,
+            'seen_classifications': self.seen_classifications,
         }
 
         if name is None:

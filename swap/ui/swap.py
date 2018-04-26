@@ -26,8 +26,9 @@ def clear(name):
 @click.argument('name')
 @click.argument('data')
 @click.option('--trajectory', default=None, help='Save trajectories of a random subsample of subjects to this specified path, if provided.')
-@click.option('--report', default=None, help='Save report about analysis to this specified path, if provied.')
-def run(name, data, trajectory=None, report=None):
+@click.option('--report', default=None, help='Save report about analysis to this specified path, if provided.')
+@click.option('--scores', default=None, help='Save exported scores about analysis to this specified path, if provided.')
+def run(name, data, trajectory=None, report=None, scores=None):
     swap = SWAP.load(name)
     config = swap.config
     parser = ClassificationParser(config)
@@ -61,7 +62,11 @@ def run(name, data, trajectory=None, report=None):
     if trajectory is not None:
         logger.info('Plotting some trajectories to {0}'.format(trajectory))
         trajectory_plot(swap=swap, path=trajectory)
+    if scores is not None:
+        logger.info('exporting score to {0}'.format(scores))
+        swap.export(path=scores)
     logger.info('entering interactive after applying classifications but before saving')
+    logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
     logger.info('saving')
     swap.save()
@@ -72,7 +77,8 @@ def run(name, data, trajectory=None, report=None):
 @click.option('--unsupervised', is_flag=True, default=False, help='Run offline SWAP algorithm updating confusion matrices using all objects in the catalog. Default: False')
 @click.option('--ignore_gold_status', is_flag=True, default=False, help='Run offline SWAP algorithm ignoring gold status of objects in catalog, so that confusion matrices updated using golds uses current probability estimate. Default: False')
 @click.option('--report', default=None, help='Save report about analysis to this specified path, if provied.')
-def offline(name, data, unsupervised=False, ignore_gold_status=False, report=None):
+@click.option('--scores', default=None, help='Save exported scores about analysis to this specified path, if provided.')
+def offline(name, data, unsupervised=False, ignore_gold_status=False, report=None, scores=None):
     swap = SWAP.load(name)
     config = swap.config
     parser = ClassificationParser(config)
@@ -104,7 +110,11 @@ def offline(name, data, unsupervised=False, ignore_gold_status=False, report=Non
     if report is not None:
         logger.info('Reporting to {0}'.format(report))
         swap.report(path=report)
+    if scores is not None:
+        logger.info('exporting score to {0}'.format(scores))
+        swap.export(path=scores)
     logger.info('entering interactive after applying classifications but before saving')
+    logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
     logger.info('saving')
     swap.save()
@@ -116,6 +126,7 @@ def offline(name, data, unsupervised=False, ignore_gold_status=False, report=Non
 def new(name, config):
     if config:
         config = Config()
+        logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
         code.interact(local=locals())
         swap = SWAP(name, config)
     else:
@@ -128,6 +139,7 @@ def new(name, config):
 @click.argument('name')
 def load(name):
     swap = SWAP.load(name)
+    logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
 
 @ui.cli.command()
@@ -138,6 +150,7 @@ def copy(old_name, new_name):
     swap = SWAP.load(old_name)
     new_name_path = path(new_name + '.pkl')
     logger.info('Saving new data at {0} after code interactive'.format(new_name_path))
+    logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
     logger.info('saving')
     swap.save(name=new_name_path)
@@ -173,6 +186,7 @@ def golds(name, path):
     swap = SWAP.load(name)
     swap.apply_golds(golds)
     logger.info('entering interactive after applying golds but before saving')
+    logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
     logger.info('saving')
     swap.save()
