@@ -61,6 +61,8 @@ class SWAP:
 
         self.classifications = []
 
+        self.seen_classifications = {}
+
     @classmethod
     def load(cls, name):
         fname = name + '.pkl'
@@ -80,6 +82,8 @@ class SWAP:
             if data.get('thresholds'):
                 swp.thresholds = Thresholds.load(
                     swp.subjects, data['thresholds'])
+            if data.get('seen_classifications'):
+                swp.seen_classifications = data['seen_classifications']
         else:
             swp = SWAP(name)
         return swp
@@ -250,6 +254,16 @@ class SWAP:
         if self.last_id is None or id_ > self.last_id:
             self.last_id = id_
 
+        # check if classification pair is in seen_classifications
+        try:
+            seen = self.seen_classifications[(user, subject)]
+            # we have already had this pair happen. ignore
+            logger.warning('Already saw {0} classify {1}. Ignoring Classification {2},{3}'.format(user, subject, cl, id_))
+            return
+        except KeyError:
+            # have not seen this, so we may add this classification
+            self.seen_classifications[(user, subject)] = True
+
         user = self.users[user]
         subject = self.subjects[subject]
 
@@ -307,6 +321,7 @@ class SWAP:
             'subjects': self.subjects.dump(),
             'thresholds': thresholds,
             'last_id': self.last_id,
+            'seen_classifications', self._seen_classifications,
         }
 
         if name is None:
