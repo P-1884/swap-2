@@ -12,6 +12,7 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
     # max_seen is set by subject with max number of classifications
     max_seen = 1
     subjects_final = []
+    subjects=[20865737,20865736,20865735,20865734,20865733,20865732,20865731,20865730,20865729,20865728]
     if type(subjects) == int:
         # draw random numbers
         while len(subjects_final) < subjects:
@@ -61,7 +62,7 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
 
 
     # axes and labels
-    p_min = 1e-3
+    p_min = 5e-8
     p_max = 1
     ax.set_xlim(p_min, p_max)
     ax.set_xscale('log')
@@ -75,6 +76,8 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
     else:
         p_bogus = swap.thresholds.thresholds[0]
         p_real = swap.thresholds.thresholds[1]
+        p_bogus = 1.e-7
+        p_real = 0.95
     ax.axvline(x=subjects[0].p0, color=color_test, linestyle='dotted')
     ax.axvline(x=p_bogus, color=color_bogus, linestyle='dotted')
     ax.axvline(x=p_real, color=color_real, linestyle='dotted')
