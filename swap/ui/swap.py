@@ -177,7 +177,7 @@ def export(name, directory):
     swap = SWAP.load(name)
     report_path = directory + '/{0}_report.txt'.format(swap.name)
     logger.info('reporting')
-    swap.report(path=report_path, report_classifications=False)
+    swap.report(path=report_path, report_classifications=True)
     logger.info('exporting score')
     score_path = directory + '/{0}_scores.csv'.format(swap.name)
     swap.export_subjects(path=score_path)

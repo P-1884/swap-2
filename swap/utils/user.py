@@ -6,18 +6,18 @@ from swap.utils.collection import Collection
 
 class User:
 
-    def __init__(self, user, username, correct, seen, history=[]):
+    def __init__(self, user, username, correct, seen, prior, history=[]):
         self.id = user
         self.name = username
         self.history = history
 
-        self.prior = (correct, seen)
+        self.prior = prior
         self.correct = correct
         self.seen = seen
 
     @classmethod
     def new(cls, user, username):
-        return cls(user, username, [0, 0], [0, 0, 0], [])
+        return cls(user, username, [0, 0], [0, 0, 0], [[0, 0], [0, 0, 0]], [])
 
     def save(self):
         # save user to file
@@ -68,13 +68,14 @@ class User:
             ('history', self.history),
             ('correct', self.correct),
             ('seen', self.seen),
+            ('prior', self.prior),
         ])
 
     def report(self, report_classifications=True):
         string = '# user id: {0}, name: {1},'.format(self.id, self.name)
         string += ' PBogus: {0:.3f}, PReal: {1:.3f}, length: {2}\n'.format(self.score[0], self.score[1], sum(self.seen))
         string += '## Bogus Seen: {0}, Bogus Correct: {1}, Real Seen: {2}, Real Correct: {3}, Other Seen: {4}\n'.format(self.seen[0], self.correct[0], self.seen[1], self.correct[1], self.seen[2])
-        if report_classifications:
+        if report_classifications and len(self.history) > 0:
             string += '# Subject ID, Gold, Classification\n'
             for s in self.history:
                 id = s[0]

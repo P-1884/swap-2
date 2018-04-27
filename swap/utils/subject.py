@@ -15,10 +15,10 @@ class Subject:
     """
     p0 = 5.e-4
 
-    def __init__(self, subject, gold, score, seen=0, retired=None, history=[]):
+    def __init__(self, subject, gold, score, prior, seen=0, retired=None, history=[]):
         self.id = subject
         self.gold = gold
-        self.prior = score
+        self.prior = prior
         self.score = score
         self.seen = seen
         self.history = history
@@ -29,7 +29,7 @@ class Subject:
         """
         Create a new Subject
         """
-        return cls(subject, gold, cls.p0, history=[])
+        return cls(subject, gold, cls.p0, cls.p0, history=[])
 
     def classify(self, user, cl):
         """
@@ -117,6 +117,7 @@ class Subject:
             ('subject', self.id),
             ('gold', self.gold),
             ('score', self.score),
+            ('prior', self.prior),
             ('history', self.history),
             ('retired', self.retired),
             ('seen', self.seen),
@@ -126,7 +127,7 @@ class Subject:
         string = '# subject id: {0},'.format(self.id)
         string += ' gold: %d, score: %.3f, seen: %d\n' % \
                 (self.gold, self.score, self.seen)
-        if report_classifications:
+        if report_classifications and len(self.history) > 0:
             string += '# User ID, PBogus, PReal, Classification, dlogP\n'
             old_score = self.score
             score, score_history = self.update_score(history=True)

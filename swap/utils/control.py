@@ -226,11 +226,11 @@ class SWAP:
             n_real = probabilities.sum()
             n_bogus = len(probabilities) - n_real
 
-            user.seen = [n_bogus - 2 * gamma, n_real - 2 * gamma]
+            user.seen = [n_bogus - 2 * gamma, n_real - 2 * gamma, user.seen[2]]
             user.correct = [n_bogus * p_bogus - gamma, n_real * p_real - gamma]
-            user.prior = (user.correct, user.seen)
-            # truncate history
-            user.history = []
+            # # truncate history
+            # user.prior = (user.correct, user.seen)
+            # user.history = []
 
         logger.info('apply subjects')
         self.apply_subjects()
@@ -245,10 +245,10 @@ class SWAP:
             probability = probabilities[sid]
             print(sid, subject.id, probability)
             # modify prior == score
-            subject.prior = probability
             subject.score = probability
-            # truncate history for the truncate step
-            subject.history = []
+            # # truncate history for the truncate step
+            # subject.prior = probability
+            # subject.history = []
 
     def classify(self, user, subject, cl, id_):
         if self.last_id is None or id_ > self.last_id:
