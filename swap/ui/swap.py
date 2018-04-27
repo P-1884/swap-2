@@ -27,8 +27,9 @@ def clear(name):
 @click.argument('data')
 @click.option('--trajectory', default=None, help='Save trajectories of a random subsample of subjects to this specified path, if provided.')
 @click.option('--report', default=None, help='Save report about analysis to this specified path, if provided.')
-@click.option('--scores', default=None, help='Save exported scores about analysis to this specified path, if provided.')
-def run(name, data, trajectory=None, report=None, scores=None):
+@click.option('--scores', default=None, help='Save subject scores about analysis to this specified path, if provided.')
+@click.option('--skills', default=None, help='Save user skills about analysis to this specified path, if provided.')
+def run(name, data, trajectory=None, report=None, scores=None, skills=None):
     swap = SWAP.load(name)
     config = swap.config
     parser = ClassificationParser(config)
@@ -63,8 +64,11 @@ def run(name, data, trajectory=None, report=None, scores=None):
         logger.info('Plotting some trajectories to {0}'.format(trajectory))
         trajectory_plot(swap=swap, path=trajectory)
     if scores is not None:
-        logger.info('exporting score to {0}'.format(scores))
-        swap.export(path=scores)
+        logger.info('exporting subject scores to {0}'.format(scores))
+        swap.export_subjects(path=scores)
+    if skills is not None:
+        logger.info('exporting user skill to {0}'.format(skills))
+        swap.export_users(path=skills)
     logger.info('entering interactive after applying classifications but before saving')
     logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
@@ -78,7 +82,8 @@ def run(name, data, trajectory=None, report=None, scores=None):
 @click.option('--ignore_gold_status', is_flag=True, default=False, help='Run offline SWAP algorithm ignoring gold status of objects in catalog, so that confusion matrices updated using golds uses current probability estimate. Default: False')
 @click.option('--report', default=None, help='Save report about analysis to this specified path, if provied.')
 @click.option('--scores', default=None, help='Save exported scores about analysis to this specified path, if provided.')
-def offline(name, data, unsupervised=False, ignore_gold_status=False, report=None, scores=None):
+@click.option('--skills', default=None, help='Save user skills about analysis to this specified path, if provided.')
+def offline(name, data, unsupervised=False, ignore_gold_status=False, report=None, scores=None, skills=None):
     swap = SWAP.load(name)
     config = swap.config
     parser = ClassificationParser(config)
@@ -111,8 +116,11 @@ def offline(name, data, unsupervised=False, ignore_gold_status=False, report=Non
         logger.info('Reporting to {0}'.format(report))
         swap.report(path=report)
     if scores is not None:
-        logger.info('exporting score to {0}'.format(scores))
-        swap.export(path=scores)
+        logger.info('exporting subject scores to {0}'.format(scores))
+        swap.export_subjects(path=scores)
+    if skills is not None:
+        logger.info('exporting user skills to {0}'.format(skills))
+        swap.export_users(path=skills)
     logger.info('entering interactive after applying classifications but before saving')
     logger.warning('\n#####Press ctrl-d to continue the code. Type exit() to stop the code')
     code.interact(local={**globals(), **locals()})
@@ -166,7 +174,10 @@ def export(name, directory):
     swap.report(path=report_path, report_classifications=False)
     logger.info('exporting score')
     score_path = directory + '/{0}_scores.csv'.format(swap.name)
-    swap.export(path=score_path)
+    swap.export_subjects(path=score_path)
+    logger.info('exporting score')
+    score_path = directory + '/{0}_skills.csv'.format(swap.name)
+    swap.export_users(path=score_path)
 
 
 @ui.cli.command()

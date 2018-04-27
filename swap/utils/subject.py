@@ -114,7 +114,7 @@ class Subject:
             ('subject', self.id),
             ('gold', self.gold),
             ('score', self.score),
-            #('history', self.history),
+            ('history', self.history),
             ('retired', self.retired),
             ('seen', self.seen),
         ])

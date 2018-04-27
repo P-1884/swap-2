@@ -256,7 +256,7 @@ class SWAP:
 
         # check if classification pair is in seen_classifications
         try:
-            seen = self.seen_classifications[(user, subject)]
+            self.seen_classifications[(user, subject)]
             # we have already had this pair happen. ignore
             logger.warning('Already saw {0} classify {1}. Ignoring Classification {2},{3}'.format(user, subject, cl, id_))
             return
@@ -393,12 +393,12 @@ class SWAP:
         with open(path, 'w') as file:
             file.write(report)
 
-    def export(self, path=None):
+    def export_subjects(self, path=None):
         import csv
 
         if path is None:
             path = swap.data.path(self.name + '_scores.csv')
-        logger.info('Saving scores to {0}'.format(path))
+        logger.info('Saving subject scores to {0}'.format(path))
 
         with open(path, 'w') as file:
             writer = csv.writer(file, delimiter=',')
@@ -409,6 +409,21 @@ class SWAP:
                     retired = -1
                 row = [subject.id, subject.gold, subject.score, retired, subject.seen]
                 writer.writerow(row)
+
+    def export_users(self, path=None):
+        import csv
+
+        if path is None:
+            path = swap.data.path(self.name + '_skills.csv')
+        logger.info('Saving user skills to {0}'.format(path))
+
+        with open(path, 'w') as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(["id","name","bogus seen","real seen","PD","PL"])
+            for user in self.users.iter():
+                row = [user.id, user.name, user.seen[0], user.seen[1], user.score[0], user.score[1]]
+                writer.writerow(row)
+
 
     @property
     def performance(self):

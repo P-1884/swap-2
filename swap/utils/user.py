@@ -63,6 +63,7 @@ class User:
         return OrderedDict([
             ('user', self.id),
             ('username', self.name),
+            ('history', self.history),
             ('correct', self.correct),
             ('seen', self.seen),
         ])
