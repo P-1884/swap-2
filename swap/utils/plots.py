@@ -78,7 +78,7 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
         p_real = swap.thresholds.thresholds[1]
         p_bogus = 1.e-7
         p_real = 0.95
-    ax.axvline(x=subjects[0].p0, color=color_test, linestyle='dotted')
+    ax.axvline(x=subjects[0].prior, color=color_test, linestyle='dotted')
     ax.axvline(x=p_bogus, color=color_bogus, linestyle='dotted')
     ax.axvline(x=p_real, color=color_real, linestyle='dotted')
 
@@ -95,8 +95,8 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
         # trajectory
         y = np.arange(len(history)) + 1
 
-        # add initial y=0.5, history=subject.p0
-        history = np.append(subject.p0, history)
+        # add initial value
+        history = np.append(subject.prior, history)
         y = np.append(0.5, y)
 
         ax.plot(history, y, color=colors[subject.gold], alpha=alphas[subject.gold], linewidth=linewidths[subject.gold], linestyle='-')

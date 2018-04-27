@@ -6,10 +6,10 @@ from swap.utils.collection import Collection
 
 class User:
 
-    def __init__(self, user, username, correct, seen):
+    def __init__(self, user, username, correct, seen, history=[]):
         self.id = user
         self.name = username
-        self.history = []
+        self.history = history
 
         self.prior = (correct, seen)
         self.correct = correct
@@ -17,7 +17,7 @@ class User:
 
     @classmethod
     def new(cls, user, username):
-        return cls(user, username, [0, 0], [0, 0])
+        return cls(user, username, [0, 0], [0, 0, 0], [])
 
     def save(self):
         # save user to file
@@ -54,6 +54,8 @@ class User:
                 seen[gold] += 1
                 if gold == cl:
                     correct[gold] += 1
+            else:
+                seen[2] += 1
 
         self.seen = seen
         self.correct = correct
@@ -71,7 +73,7 @@ class User:
     def report(self, report_classifications=True):
         string = '# user id: {0}, name: {1},'.format(self.id, self.name)
         string += ' PBogus: {0:.3f}, PReal: {1:.3f}, length: {2}\n'.format(self.score[0], self.score[1], sum(self.seen))
-        string += '## Bogus Seen: {0}, Bogus Correct: {1}, Real Seen: {2}, Real Correct: {3}\n'.format(self.seen[0], self.correct[0], self.seen[1], self.correct[1])
+        string += '## Bogus Seen: {0}, Bogus Correct: {1}, Real Seen: {2}, Real Correct: {3}, Other Seen: {4}\n'.format(self.seen[0], self.correct[0], self.seen[1], self.correct[1], self.seen[2])
         if report_classifications:
             string += '# Subject ID, Gold, Classification\n'
             for s in self.history:

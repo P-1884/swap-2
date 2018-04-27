@@ -10,6 +10,7 @@ from swap.utils.control import SWAP, Config, Thresholds
 from swap.utils.parser import ClassificationParser
 from swap.utils.plots import trajectory_plot
 
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,8 @@ def run(name, data, trajectory=None, report=None, scores=None, skills=None):
     config = swap.config
     parser = ClassificationParser(config)
 
+    classifications = 0
+    classifications_ingested = 0
     with open(data, 'r') as file:
         reader = csv.DictReader(file)
         for i, row in enumerate(reader):
@@ -46,13 +49,16 @@ def run(name, data, trajectory=None, report=None, scores=None, skills=None):
                 sys.stdout.flush()
                 sys.stdout.write("%d records processed\r" % i)
 
-            swap.classify(**row)  # appends to agent and subject histories
+            did_classify = swap.classify(**row)  # appends to agent and subject histories
+            classifications += 1
+            classifications_ingested += did_classify
 
             # if i > 0 and i % 1e6 == 0:
                 # print()
                 # print('Applying records')
                 # swap()
                 # swap.truncate()
+    logger.info('Processed {0} classifications, of which {1} were ingested as unique (user,subject) pairs'.format(classifications, classifications_ingested))
 
     swap()  # score_users, apply_subjects, score_subjects
     logger.info('Retiring')
@@ -178,6 +184,9 @@ def export(name, directory):
     logger.info('exporting score')
     score_path = directory + '/{0}_skills.csv'.format(swap.name)
     swap.export_users(path=score_path)
+    trajectory_path = directory + '/{0}_trajectory.pdf'.format(swap.name)
+    logger.info('Plotting some trajectories to {0}'.format(trajectory_path))
+    trajectory_plot(swap=swap, path=trajectory_path)
 
 
 @ui.cli.command()

@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from swap.utils.collection import Collection
 
+from math import log10
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,16 +13,15 @@ class Subject:
     Class to track an individual subject, its gold status, and its
     score.
     """
-#    p0 = .12
-    p0=5.e-4
+    p0 = 5.e-4
 
-    def __init__(self, subject, gold, score, seen=0, retired=None):
+    def __init__(self, subject, gold, score, seen=0, retired=None, history=[]):
         self.id = subject
         self.gold = gold
         self.prior = score
         self.score = score
         self.seen = seen
-        self.history = []
+        self.history = history
         self.retired = retired
 
     @classmethod
@@ -29,7 +29,7 @@ class Subject:
         """
         Create a new Subject
         """
-        return cls(subject, gold, cls.p0)
+        return cls(subject, gold, cls.p0, history=[])
 
     def classify(self, user, cl):
         """
@@ -90,10 +90,12 @@ class Subject:
                 bogus, real = thresholds
                 if score < bogus:
                     self.retired = 0
-                    break
+                    # keep updating the score
+                    # break
                 elif score > real:
                     self.retired = 1
-                    break
+                    # keep updating the score
+                    # break
 
         self.score = score
         if history:
@@ -125,13 +127,20 @@ class Subject:
         string += ' gold: %d, score: %.3f, seen: %d\n' % \
                 (self.gold, self.score, self.seen)
         if report_classifications:
-            string += '# User ID, PBogus, PReal, Classification\n'
-            for s in self.history:
+            string += '# User ID, PBogus, PReal, Classification, dlogP\n'
+            old_score = self.score
+            score, score_history = self.update_score(history=True)
+            self.score = old_score
+            old_score = self.prior
+            for s, score_s in zip(self.history, score_history):
                 id = s[0]
                 pbogus = s[1][0]
                 preal = s[1][1]
                 classification = s[2]
-                string += '{0}, {1:.2f}, {2:.2f}, {3}\n'.format(id, preal, pbogus, classification)
+
+                dlogP = log10(score_s) - log10(old_score)
+                old_score = score_s
+                string += '{0}, {1:.2f}, {2:.2f}, {3}, {4:+.4f}\n'.format(id, preal, pbogus, classification, dlogP)
             string += '\n'
 
         return string

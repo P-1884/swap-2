@@ -8,13 +8,13 @@ import swap.data
 
 import logging
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.INFO)
 
 class Config:
 
     def __init__(self, **kwargs):
         annotation = {
-            'task': 'T1',
+            'task': 'T0',
             'value_key': None,
             'value_separator': '.',
             'true': [1],
@@ -230,7 +230,7 @@ class SWAP:
             user.correct = [n_bogus * p_bogus - gamma, n_real * p_real - gamma]
             user.prior = (user.correct, user.seen)
             # truncate history
-            # user.history = []
+            user.history = []
 
         logger.info('apply subjects')
         self.apply_subjects()
@@ -248,7 +248,7 @@ class SWAP:
             subject.prior = probability
             subject.score = probability
             # truncate history for the truncate step
-            # subject.history = []
+            subject.history = []
 
     def classify(self, user, subject, cl, id_):
         if self.last_id is None or id_ > self.last_id:
@@ -258,8 +258,8 @@ class SWAP:
         try:
             self.seen_classifications[(user, subject)]
             # we have already had this pair happen. ignore
-            logger.warning('Already saw {0} classify {1}. Ignoring Classification {2},{3}'.format(user, subject, cl, id_))
-            return
+            logger.debug('Already saw {0} classify {1}. Ignoring Classification {2},{3}'.format(user, subject, cl, id_))
+            return 0
         except KeyError:
             # have not seen this, so we may add this classification
             self.seen_classifications[(user, subject)] = True
@@ -271,6 +271,7 @@ class SWAP:
         subject.classify(user, cl)
 
         self.classifications.append([user.id, subject.id, cl])
+        return 1
 
     def truncate(self):
         self.users.truncate()
@@ -286,7 +287,8 @@ class SWAP:
 
     def apply_subjects(self):
         # update user scores to each subject
-        for u in self.users.iter():
+        for ui, u in enumerate(self.users.iter()):
+            logger.debug('User {0} of {1}: {2} with {3} classifications'.format(ui, len(self.users), u.id, len(u.history)))
             for subject, _, _ in u.history:
                 self.subjects[subject].update_user(u)
 
@@ -419,9 +421,9 @@ class SWAP:
 
         with open(path, 'w') as file:
             writer = csv.writer(file, delimiter=',')
-            writer.writerow(["id","name","bogus seen","real seen","PD","PL"])
+            writer.writerow(["id","name","bogus_seen","real_seen","other_seen","bogus_correct","real_correct","PD","PL"])
             for user in self.users.iter():
-                row = [user.id, user.name, user.seen[0], user.seen[1], user.score[0], user.score[1]]
+                row = [user.id, user.name, user.seen[0], user.seen[1], user.seen[2], user.correct[0], user.correct[1], user.score[0], user.score[1]]
                 writer.writerow(row)
 
 
