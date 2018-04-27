@@ -12,7 +12,8 @@ class Subject:
     Class to track an individual subject, its gold status, and its
     score.
     """
-    p0 = .12
+#    p0 = .12
+    p0=5.e-4
 
     def __init__(self, subject, gold, score, seen=0, retired=None):
         self.id = subject
