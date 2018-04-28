@@ -93,11 +93,10 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
         history = np.where(history < p_min, p_min, history)
         history = np.where(history > p_max, p_max, history)
         # trajectory
-        y = np.arange(len(history)) + 1
+        y = np.arange(len(history) + 1) + 1
 
         # add initial value
         history = np.append(subject.prior, history)
-        y = np.append(0.5, y)
 
         ax.plot(history, y, color=colors[subject.gold], alpha=alphas[subject.gold], linewidth=linewidths[subject.gold], linestyle='-')
 
