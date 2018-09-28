@@ -209,18 +209,18 @@ class Thresholds:
     """
     Class to determine retirement thresholds
 
-    Thresholds are determined from the false positive rate (fpr) and the
-    missed detection rate (mdr), considering only the subjects with gold
+    Thresholds are determined from the false positive rate (p_retire_dud) and the
+    missed detection rate (p_retire_lens), considering only the subjects with gold
     labels. The bogus retirement threshold is set such that a rate equal
-    to mdr of real subjects are mislabeled as bogus. The real retirement
-    threshold is set such that a rate equal to fpr of bogus subjects are
+    to p_retire_lens of real subjects are mislabeled as bogus. The real retirement
+    threshold is set such that a rate equal to p_retire_dud of bogus subjects are
     labeled as real.
     """
 
-    def __init__(self, subjects, fpr, mdr, thresholds=None):
+    def __init__(self, subjects, p_retire_dud, p_retire_lens, thresholds=None):
         self.subjects = subjects
-        self.fpr = fpr
-        self.mdr = mdr
+        self.p_retire_dud = p_retire_dud
+        self.p_retire_lens = p_retire_lens
         self.thresholds = thresholds
 
     def dump(self):
@@ -228,8 +228,8 @@ class Thresholds:
         Dump thresholds object
         """
         return {
-            'fpr': self.fpr,
-            'mdr': self.mdr,
+            'p_retire_dud': self.p_retire_dud,
+            'p_retire_lens': self.p_retire_lens,
             'thresholds': self.thresholds
         }
 
@@ -275,67 +275,9 @@ class Thresholds:
         if self.thresholds is not None:
             return self.thresholds
 
-        fpr = self.fpr
-        mdr = self.mdr
-
-        logger.debug('determining retirement thresholds fpr %.3f mdr %.3f',
-                     fpr, mdr)
-
-        scores = self.get_scores()  # these are sorted!
-        totals = self.get_counts(scores)
-
-        # Calculate real retirement threshold
-        count = 0
-        real = 0
-        if totals[0] == 0:
-            logger.error('No bogus gold labels!')
-            real = 1
-            _fpr = None
-        else:
-            for gold, score in scores:
-                if gold == 0:
-                    count += 1
-
-                    _fpr = 1 - count / totals[0]
-                    # print(_fpr, count, totals[0], score)
-                    if _fpr < fpr:
-                        real = score
-                        break
-
-        # Calculate bogus retirement threshold
-        count = 0
-        bogus = 0
-        if totals[1] == 0:
-            logger.error('No real gold labels!')
-            bogus = 0
-            _mdr = None
-        else:
-            for gold, score in reversed(scores):
-                if gold == 1:
-                    count += 1
-
-                    _mdr = 1 - count / totals[1]
-                    # print(_mdr, count, totals[1], score)
-                    if _mdr < mdr:
-                        bogus = score
-                        break
-
-        if bogus >= Subject.p0:
-            logger.warning('bogus is greater than prior, '
-                           'setting bogus threshold to p0')
-            bogus = Subject.p0
-
-        if real <= Subject.p0:
-            logger.warning('real is less than prior, '
-                           'setting real threshold to p0')
-            real = Subject.p0
-
-        logger.debug('bogus %.4f real %.4f, fpr %.4f mdr %.4f',
-                     bogus, real, _fpr, _mdr)
-
-        self.thresholds = bogus, real
-        return self.thresholds
-
+        p_retire_dud = self.p_retire_dud
+        p_retire_lens = self.p_retire_lens
+        return p_retire_dud, p_retire_lens
 
 class ScoreStats:
 
@@ -345,11 +287,11 @@ class ScoreStats:
 
         self.tpr = None
         self.tnr = None
-        self.fpr = None
+        self.p_retire_dud = None
         self.fnr = None
         self.mse = None
         self.mse_t = None
-        self.mdr = None
+        self.p_retire_lens = None
 
         self.purity = None
         self.retired = None
@@ -390,7 +332,7 @@ class ScoreStats:
 
         self.tpr = divide(high[1], total[1])
         self.tnr = divide(low[0], total[0])
-        self.fpr = divide(high[0], total[0])
+        self.p_retire_dud = divide(high[0], total[0])
         self.fnr = divide(low[1], total[1])
 
         self.purity = divide(high[1], self.total(high))
@@ -404,7 +346,7 @@ class ScoreStats:
         self.mse_t = self.mean_squared_error(scores, True)
 
         # self.completeness = self.tpr
-        self.mdr = 1 - self.tpr
+        self.p_retire_lens = 1 - self.tpr
 
         return stats
 
@@ -444,9 +386,9 @@ class ScoreStats:
 
     def dict(self):
         keys = [
-            'tpr', 'tnr', 'fpr', 'fnr', 'mse', 'mse_t',
+            'tpr', 'tnr', 'p_retire_dud', 'fnr', 'mse', 'mse_t',
             'purity', 'retired', 'retired_correct',
-            'mdr']
+            'p_retire_lens']
 
         data = []
         for k in keys:

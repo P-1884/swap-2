@@ -23,8 +23,8 @@ class Config:
         if 'annotation' in kwargs:
             annotation.update(kwargs['annotation'])
         self.annotation = annotation
-        self.mdr = kwargs.get('mdr', .1)
-        self.fpr = kwargs.get('fpr', .01)
+        self.p_retire_lens = kwargs.get('p_retire_lens', .9)
+        self.p_retire_dud = kwargs.get('p_retire_dud', 1e-3)
 
         self.online_name = kwargs.get('online_name', None)
 
@@ -303,8 +303,8 @@ class SWAP:
         for subject, gold in golds:
             self.apply_gold(subject, gold)
 
-    def retire(self, fpr, mdr):
-        t = Thresholds(self.subjects, fpr, mdr)
+    def retire(self, p_retire_dud, p_retire_lens):
+        t = Thresholds(self.subjects, p_retire_dud, p_retire_lens)
         self.thresholds = t
         bogus, real = t()  # these are the threshold scores: p < bogus -> object is retired as bogus, and p > real -> object is retired as real.
 
@@ -344,10 +344,10 @@ class SWAP:
         report += '\n{0} Subjects, {1} Users, {2} Classifications\n'.format(len(self.subjects), len(self.users), n_seen)
 
         if self.thresholds is not None:
-            # Target FPR, MDR, bogus and real thresholds
+            # Target P_retire_dud, P_retire_lens, bogus and real thresholds
             p_bogus = self.thresholds.thresholds[0]
             p_real = self.thresholds.thresholds[1]
-            report += '\nTarget FPR: {0:.3f}, Target MDR: {1:.3f}, P(Retire Bogus): {2:.3f}, P(Retire Real): {3:.3f}\n'.format(self.thresholds.fpr, self.thresholds.mdr, p_bogus, p_real)
+            report += '\nTarget P_retire_dud: {0:.3f}, Target P_retire_lens: {1:.3f}, P(Retire Bogus): {2:.3f}, P(Retire Real): {3:.3f}\n'.format(self.thresholds.p_retire_dud, self.thresholds.p_retire_lens, p_bogus, p_real)
 
             # TODO: golds: give breakdown of golds classifications
             scores = self.thresholds.get_scores()
@@ -368,7 +368,7 @@ class SWAP:
             for k, label in enumerate(['bogus', 'real', 'unknown']):
                 report += '{0} {1}: {2} classified real, {3} classified bogus, {4} inconclusive'.format(label, total[k], real[k], bogus[k], inconclusive[k])
                 report += '\n'
-            # report += 'fpr: {0:.4f}, mdf: {1:.4f}'.format(1 - real[1] / total[1], 1 - bogus[0] / total[0])
+            # report += 'p_retire_dud: {0:.4f}, mdf: {1:.4f}'.format(1 - real[1] / total[1], 1 - bogus[0] / total[0])
             report += '\n'
         else:
             logger.debug('skipping threshold reporting')
