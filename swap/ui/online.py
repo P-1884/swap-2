@@ -66,15 +66,15 @@ def run(name):
 def run_continuous(name):
     swap = SWAP.load(name)
     ce.Config.load(swap.config.online_name)
-     try:
+    try:
         logger.info('Starting SWAP (%s) in continuous online mode...' % name)
         while True:
             _, haveItems = Online.receive(swap)
-            if haveItems
+            if haveItems:
                 swap.save()
                 ce.Config.instance().save()
                 logger.debug('Saved swap status')
-                 logger.info('Sending reductions to caesar')
+                logger.info('Sending reductions to caesar')
                 Online.send(swap)
                 logger.debug('Done sending reductions to caesar')
     except KeyboardInterrupt as e:
