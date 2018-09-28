@@ -62,7 +62,7 @@ def run(name, data, trajectory=None, report=None, scores=None, skills=None):
 
     swap()  # score_users, apply_subjects, score_subjects
     logger.info('Retiring')
-    swap.retire(config.fpr, config.mdr)
+    swap.retire(config.p_retire_dud, config.p_retire_lens)
     if report is not None:
         logger.info('Reporting to {0}'.format(report))
         swap.report(path=report)
@@ -117,7 +117,7 @@ def offline(name, data, unsupervised=False, ignore_gold_status=False, report=Non
     logger.info('Entering expectation_maximization')
     swap.offline(unsupervised=unsupervised, ignore_gold_status=ignore_gold_status)
     logger.info('Retiring')
-    swap.retire(config.fpr, config.mdr)
+    swap.retire(config.p_retire_dud, config.p_retire_lens)
     if report is not None:
         logger.info('Reporting to {0}'.format(report))
         swap.report(path=report)

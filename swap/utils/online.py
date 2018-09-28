@@ -27,7 +27,10 @@ class Online:
         parser = AnnotationParser(config)
 
         data = ce.Extractor.next()
+        haveItems = False
         for i, item in enumerate(data):
+            logger.debug('Received annotation: Type ({}): {}'.format(type(item['annotations']), item['annotations']))
+            haveItems = True
             cl = {
                 'user': item['user'],
                 'subject': item['subject'],
@@ -41,8 +44,11 @@ class Online:
                 sys.stdout.flush()
                 sys.stdout.write("%d records processed\r" % i)
 
+            logger.debug('Received classification: {}'.format(cl))
+
             swap.classify(**cl)
 
-        swap()
-        swap.retire(config.fpr, config.mdr)
-        return swap
+        if haveItems:
+            swap()
+            swap.retire()
+        return swap, haveItems
