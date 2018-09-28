@@ -208,13 +208,9 @@ class Subjects(Collection):
 class Thresholds:
     """
     Class to determine retirement thresholds
-
-    Thresholds are determined from the false positive rate (p_retire_dud) and the
-    missed detection rate (p_retire_lens), considering only the subjects with gold
-    labels. The bogus retirement threshold is set such that a rate equal
-    to p_retire_lens of real subjects are mislabeled as bogus. The real retirement
-    threshold is set such that a rate equal to p_retire_dud of bogus subjects are
-    labeled as real.
+    
+    Thresholds are just a constant threshold for retirement as a dud (p_retire_dud)
+    and a threshold for retirement as a lens (p_retire_lens).
     """
 
     def __init__(self, subjects, p_retire_dud, p_retire_lens, thresholds=None):
@@ -270,7 +266,7 @@ class Thresholds:
 
     def __call__(self):
         """
-        Determine retirement tresholds
+        Determine retirement tresholds. This is just to say that we return the thresholds values.
         """
         if self.thresholds is not None:
             return self.thresholds
@@ -287,11 +283,11 @@ class ScoreStats:
 
         self.tpr = None
         self.tnr = None
-        self.p_retire_dud = None
+        self.fpr = None
         self.fnr = None
         self.mse = None
         self.mse_t = None
-        self.p_retire_lens = None
+        self.mdr = None
 
         self.purity = None
         self.retired = None
@@ -332,7 +328,7 @@ class ScoreStats:
 
         self.tpr = divide(high[1], total[1])
         self.tnr = divide(low[0], total[0])
-        self.p_retire_dud = divide(high[0], total[0])
+        self.fpr = divide(high[0], total[0])
         self.fnr = divide(low[1], total[1])
 
         self.purity = divide(high[1], self.total(high))
@@ -346,7 +342,7 @@ class ScoreStats:
         self.mse_t = self.mean_squared_error(scores, True)
 
         # self.completeness = self.tpr
-        self.p_retire_lens = 1 - self.tpr
+        self.mdr = 1 - self.tpr
 
         return stats
 
@@ -386,9 +382,9 @@ class ScoreStats:
 
     def dict(self):
         keys = [
-            'tpr', 'tnr', 'p_retire_dud', 'fnr', 'mse', 'mse_t',
+            'tpr', 'tnr', 'fpr', 'fnr', 'mse', 'mse_t',
             'purity', 'retired', 'retired_correct',
-            'p_retire_lens']
+            'mdr']
 
         data = []
         for k in keys:
