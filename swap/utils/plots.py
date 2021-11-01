@@ -2,6 +2,12 @@
 Adapted from https://github.com/drphilmarshall/SpaceWarps with minor adjustments
 
 """
+def thresholds_setting():
+#    p_real = 0.95
+#    p_bogus = 1.e-7
+    p_real = 0.6
+    p_bogus = 0.4
+    return [p_real,p_bogus]
 
 def trajectory_plot(swap, path=None, subjects=200, logy=True):
     import matplotlib.patches as mpatches
@@ -12,7 +18,7 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
     # max_seen is set by subject with max number of classifications
     max_seen = 1
     subjects_final = []
-    subjects=[20865737,20865736,20865735,20865734,20865733,20865732,20865731,20865730,20865729,20865728]
+    subjects=[]
     if type(subjects) == int:
         # draw random numbers
         while len(subjects_final) < subjects:
@@ -74,10 +80,12 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
         p_bogus = 1.1 * p_min
         p_real = 0.9 * p_max
     else:
-        p_bogus = swap.thresholds.thresholds[0]
-        p_real = swap.thresholds.thresholds[1]
-        p_bogus = 1.e-7
-        p_real = 0.95
+ #       p_bogus = swap.thresholds.thresholds[0]
+ #       p_real = swap.thresholds.thresholds[1]
+ #       p_bogus = 1.e-7
+ #       p_real = 0.95
+         p_real , p_bogus= thresholds_setting()
+
     ax.axvline(x=subjects[0].prior, color=color_test, linestyle='dotted')
     ax.axvline(x=p_bogus, color=color_bogus, linestyle='dotted')
     ax.axvline(x=p_real, color=color_real, linestyle='dotted')
