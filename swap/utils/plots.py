@@ -10,6 +10,8 @@ def thresholds_setting():
     return [p_real,p_bogus]
 
 def trajectory_plot(swap, path=None, subjects=200, logy=True):
+    import logging
+    logging.getLogger('matplotlib').setLevel(logging.WARNING)
     import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
     import numpy as np
