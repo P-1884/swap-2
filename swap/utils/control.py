@@ -9,7 +9,7 @@ import swap.data
 
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+#logger.setLevel(logging.INFO)
 
 class Config:
 
@@ -90,11 +90,11 @@ class SWAP:
         return swp
 
     def __call__(self):
-        logger.info('score users')
+#        logger.info('score users')
         self.score_users()
-        logger.info('apply subjects')
+#        logger.info('apply subjects')
         self.apply_subjects()
-        logger.info('score_subjects')
+#        logger.info('score_subjects')
         self.score_subjects()
 
     def offline(self, unsupervised=False, ignore_gold_status=False):
@@ -105,7 +105,7 @@ class SWAP:
 
         # need to turn the classifications into a more easily manipulatable form
 
-        logger.debug('OfflineSwap: Getting scores')
+#        logger.debug('OfflineSwap: Getting scores')
         uids = []
         sids = []
         classifications = []
@@ -121,13 +121,13 @@ class SWAP:
             classifications.append([uids.index(user_id), sids.index(subject_id), cl, subject.gold])
         classifications = np.array(classifications)
 
-        logger.debug('OfflineSwap: confusions')
+#        logger.debug('OfflineSwap: confusions')
         confusions = []
         for uid in uids:
             confusions.append(self.users[uid].score)
         confusions = np.array(confusions)  # confusions[:,0] == PD, confusions[:,1] == PL
 
-        logger.debug('OfflineSwap: probabilities')
+#        logger.debug('OfflineSwap: probabilities')
         probabilities = []
         unknown_indices = []
         for i, sid in enumerate(sids):
@@ -148,7 +148,7 @@ class SWAP:
 
         epsilon_taus = 10
         N_try = 0
-        logger.info('Running Expectation Maximization')
+#        logger.info('Running Expectation Maximization')
         while (epsilon_taus > epsilon_min) * (N_try < N_max) + (N_try < N_min):
             # collect old probabilities for assessing convergence
             old_probabilities = probabilities.copy()
@@ -213,7 +213,7 @@ class SWAP:
 
         logger.info('Finished EM at Step {0}. Convergence Score: {1:.2e}'.format(N_try, epsilon_taus))
 
-        logger.info('score users')
+#        logger.info('score users')
         # apply scores
         for user in self.users.iter():
             # hacky: set prior, seen, and correct values, and truncate history
@@ -233,10 +233,10 @@ class SWAP:
             # user.prior = (user.correct, user.seen)
             # user.history = []
 
-        logger.info('apply subjects')
+#        logger.info('apply subjects')
         self.apply_subjects()
 
-        logger.info('score subjects')
+#        logger.info('score subjects')
         for subject in self.subjects.iter():
             # emulate update_score
             try:
@@ -259,7 +259,7 @@ class SWAP:
         try:
             self.seen_classifications[(user, subject)]
             # we have already had this pair happen. ignore
-            logger.debug('Already saw {0} classify {1}. Ignoring Classification {2},{3}'.format(user, subject, cl, id_))
+#            logger.debug('Already saw {0} classify {1}. Ignoring Classification {2},{3}'.format(user, subject, cl, id_))
             return 0
         except KeyError:
             # have not seen this, so we may add this classification
