@@ -348,7 +348,7 @@ class SWAP:
             # Target P_retire_dud, P_retire_lens, bogus and real thresholds
  #           p_bogus = self.thresholds.thresholds[0]
  #           p_real = self.thresholds.thresholds[1]
-             p_real, p_bogus = thresholds_setting()
+            p_real, p_bogus = thresholds_setting()
 
             report += '\nTarget P_retire_dud: {0:.3f}, Target P_retire_lens: {1:.3f}, P(Retire Bogus): {2:.3f}, P(Retire Real): {3:.3f}\n'.format(self.thresholds.p_retire_dud, self.thresholds.p_retire_lens, p_bogus, p_real)
 
