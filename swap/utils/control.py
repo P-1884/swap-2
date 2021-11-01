@@ -4,6 +4,7 @@ import os
 
 from swap.utils.subject import Subjects, ScoreStats, Thresholds
 from swap.utils.user import Users
+from swap.utils.plots import thresholds_setting
 import swap.data
 
 import logging
@@ -25,7 +26,7 @@ class Config:
         self.annotation = annotation
         self.p_retire_lens = kwargs.get('p_retire_lens', .9)
         self.p_retire_dud = kwargs.get('p_retire_dud', 1e-3)
-
+        self.p_real, self.p_bogus = thresholds_setting()
         self.online_name = kwargs.get('online_name', None)
 
     def dump(self):
@@ -345,8 +346,10 @@ class SWAP:
 
         if self.thresholds is not None:
             # Target P_retire_dud, P_retire_lens, bogus and real thresholds
-            p_bogus = self.thresholds.thresholds[0]
-            p_real = self.thresholds.thresholds[1]
+ #           p_bogus = self.thresholds.thresholds[0]
+ #           p_real = self.thresholds.thresholds[1]
+             p_real, p_bogus = thresholds_setting()
+
             report += '\nTarget P_retire_dud: {0:.3f}, Target P_retire_lens: {1:.3f}, P(Retire Bogus): {2:.3f}, P(Retire Real): {3:.3f}\n'.format(self.thresholds.p_retire_dud, self.thresholds.p_retire_lens, p_bogus, p_real)
 
             # TODO: golds: give breakdown of golds classifications
