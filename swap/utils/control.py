@@ -289,7 +289,7 @@ class SWAP:
     def apply_subjects(self):
         # update user scores to each subject
         for ui, u in enumerate(self.users.iter()):
-            logger.debug('User {0} of {1}: {2} with {3} classifications'.format(ui, len(self.users), u.id, len(u.history)))
+#            logger.debug('User {0} of {1}: {2} with {3} classifications'.format(ui, len(self.users), u.id, len(u.history)))
             for subject, _, _ in u.history:
                 self.subjects[subject].update_user(u)
 
