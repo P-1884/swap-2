@@ -22,7 +22,7 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
     # max_seen is set by subject with max number of classifications
     max_seen = 1
     subjects_final = []
-    subjects=[]
+    subjects=1000
     if type(subjects) == int:
         # draw random numbers
         while len(subjects_final) < subjects:
