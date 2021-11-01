@@ -13,7 +13,11 @@ def trajectory_plot(swap, path=None, subjects=200, logy=True):
     import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
     import numpy as np
-
+    import logging
+    logging.getLogger('matplotlib.font_manager').disabled = True
+    logging.getLogger('matplotlib.ticker').disabled = True
+    logging.getLogger('matplotlib').disabled = True
+    logging.getLogger('matplotlib.matplotlib.loaded modules').disabled = True
     # get subjects
     # max_seen is set by subject with max number of classifications
     max_seen = 1
